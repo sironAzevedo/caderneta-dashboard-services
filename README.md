@@ -1,1 +1,1 @@
-# caderneta-dashboard-services
+# caderneta-dashboard-services [![heroku-caderneta-dashboard](https://github.com/sironAzevedo/caderneta-dashboard-services/actions/workflows/heroku-deployment.yml/badge.svg)](https://github.com/sironAzevedo/caderneta-dashboard-services/actions/workflows/heroku-deployment.yml)
