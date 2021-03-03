@@ -9,7 +9,7 @@ import com.caderneta.clients.factory.UserFallbackFactory;
 import com.caderneta.model.UserDTO;
 
 @Component
-@FeignClient(name = "caderneta-user", path = "/v1/user", fallbackFactory = UserFallbackFactory.class)
+@FeignClient(name = "caderneta-user", url = "${client.user_url}", path = "/v1/user", fallbackFactory = UserFallbackFactory.class)
 public interface UserClient {
 
 	@GetMapping(value = "/by-email")

@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.caderneta.model.DashboardDTO;
 import com.caderneta.service.IDashboardService;
 
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
 
 @RestController
 @RequestMapping("/v1/dashboard")
@@ -26,7 +26,7 @@ public class DashboardController {
     @GetMapping
     @ResponseBody
     @ResponseStatus(value = HttpStatus.OK)
-    @ApiOperation(value = "Dashboard", tags = {"Dashboard"})
+    @Operation(summary = "Dashboard", tags = {"Dashboard"})
     public Page<DashboardDTO> dashboard(@RequestParam(value = "email") String email, Pageable pageable) {
         return service.findAll(email, pageable);
     }
