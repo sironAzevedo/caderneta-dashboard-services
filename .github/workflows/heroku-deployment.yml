@@ -73,5 +73,5 @@ jobs:
           env:
             SLACK_TITLE: Notify Deploy
             SLACK_ICON: https://github.com/rtCamp.png?size=48
-            SLACK_MESSAGE: 'A API caderneta-user-services:v${{github.run_number}}, já estar disponivel no ambiente de produção'            
+            SLACK_MESSAGE: 'A API caderneta-dashboard-services:v${{github.run_number}}, já estar disponivel no ambiente de produção'            
             SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
