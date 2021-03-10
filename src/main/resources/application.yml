@@ -5,7 +5,7 @@ server:
 spring:
   application:    name: caderneta-dashboard
   zipkin:
-    base-url: http://localhost:9411/
+    base-url: ${URL_ZIPKIN:http://localhost:9411/}
 
 client:
   user_url: ${USER_URL:http://localhost:8002}
