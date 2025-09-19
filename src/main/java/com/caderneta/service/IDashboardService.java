@@ -1,11 +1,12 @@
 package com.caderneta.service;
 
+import com.caderneta.model.DashboardResponse;
+import com.caderneta.model.HeaderInfoDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.caderneta.model.DashboardDTO;
 
 public interface IDashboardService {
-
-	Page<DashboardDTO> findAll(String email, Pageable pageable);
+    DashboardResponse getDashboardSummary(String email, int mes, int ano, HeaderInfoDTO headerInfo);
 }

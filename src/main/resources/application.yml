@@ -3,26 +3,37 @@ server:
 #  port: ${PORT:0}
 
 spring:
-  application:    name: caderneta-dashboard
-  zipkin:
-    base-url: ${URL_ZIPKIN:http://localhost:9411/}
+  application:
+    name: dashboard-bff
 
-client:
-  user_url: ${USER_URL:http://localhost:8002}
-  contas_url: ${CONTAS_URL:http://localhost:8001}
+integration:
+  api:
+    fatura-recuperada:
+      base-url: ${API_FATURAS_URL:http://localhost:8081/v1/fatura-recuperada}
+      requestTimeout: 5000    # ms
+      connectionTimeout: 5000    # ms
+      circuit-breaker:
+        failure-rate-threshold: 60
+        slow-call-duration-threshold: 2000
+        permitted-calls-in-half-open-state: 5
     
-eureka:
-  client:
-    service-url:
-      #defaultZone: http://caderneta-eureka-server:8761/eureka #Esta url aponta para o container docker
-      defaultZone: ${URL_EUREKA_SERVER:http://localhost:8761/eureka}
-#  instance:
-#    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+security:
+  enabled: ${SECURITY_ENABLE:false}
+  secret:
+    vault:
+      endpoint: ${VAULT_ENDPOINT:http://localhost:8200}
+      role-id: ${VAULT_ROLE_ID}
+      secret-id: ${VAULT_SECRET_ID}
+  scopes: ${APP_SCOPES:invoice}
 
-feign:
-    hystrix:
-        enabled: true
-        
+cache:
+  redis:
+    config:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      database: ${REDIS_DATABASE:0}
+      password: ${REDIS_PASSWORD:599E72B4E2ED1023E6EE0842668117E704F5A912B09369F1AD300147E2CA895C}
+
 springdoc:
   swagger-ui:
     path=: /swagger-ui.html
