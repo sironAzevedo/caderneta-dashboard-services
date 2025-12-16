@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import static com.caderneta.util.Utils.BACKGROUND_COLOR;
+import static com.caderneta.util.Utils.REAL;
 
 @Slf4j
 @Service
@@ -73,7 +74,7 @@ public class DashboardServiceImpl implements IDashboardService {
 
 	private List<StatsResponse> buildStats(List<EvolucaoMensalResponse> evolucao, ProximasFaturasResponse faturasAtuais, ProximasFaturasResponse faturasProximas) {
 
-		final String REAL = "R$ ";
+
 
 		// 1. Total do ano
 		BigDecimal totalAno = evolucao.stream()

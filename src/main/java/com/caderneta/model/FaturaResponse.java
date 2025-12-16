@@ -9,5 +9,6 @@ public record FaturaResponse(
         LocalDate dataRecuperacao,
         String pagamentoRealizado,
         String linkDoc,
-        String linkDocUpload
+        String linkDocUpload,
+        String categoria
 ) {}

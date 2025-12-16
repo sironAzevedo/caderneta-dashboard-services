@@ -9,7 +9,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @Slf4j
 @Component
@@ -84,6 +83,23 @@ public class FaturaRecuperadaClient {
                 .onErrorResume(e -> {
                     log.error("Erro ao buscar lista de anos de faturas recuperadas. usuario={}. Error: {}", email, e.getMessage());
                     return Mono.empty(); // Fallback
+                });
+    }
+
+    public Mono<List<FaturasPorAnoResponse>> getFaturasPorAno(String email, Integer ano, HeaderInfoDTO headerInfo) {
+        log.info("Buscando faturas para usuario: {}, ano: {}", email, ano);
+        return webClient.get()
+                .uri("/{email}/ano?ano={ano}", email, ano)
+                .headers(h -> {
+                    h.add("transactionid", headerInfo.transactionId());
+                    h.add("Authorization", headerInfo.token());
+                })
+                .retrieve()
+                .bodyToFlux(FaturasPorAnoResponse.class)
+                .collectList()
+                .onErrorResume(e -> {
+                    log.error("Erro ao buscar faturas por ano. usuario={}, ano={}. Error: {}", email, ano, e.getMessage());
+                    return Mono.just(List.of()); // Fallback
                 });
     }
 }

@@ -12,5 +12,7 @@ public interface IFaturaRecuperadaRepository {
 
     Mono<ProximasFaturasResponse> getFaturasPorMes(String email, int mes, int ano, HeaderInfoDTO headerInfo);
 
+    Mono<List<FaturasPorAnoResponse>> getFaturasPorAno(String email, Integer ano, HeaderInfoDTO headerInfo);
+
     Mono<List<Integer>> getAnosFaturasRecuperadas(String email, HeaderInfoDTO headerInfo);
 }

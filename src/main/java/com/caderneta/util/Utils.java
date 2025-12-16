@@ -7,6 +7,8 @@ public final class Utils {
 	private Utils() {
 		super();
 	}
+
+	public static final String REAL = "R$ ";
 	public static final List<String> BACKGROUND_COLOR = List.of(
 			"#4361ee", "#f72585", "#3f37c9", "#4cc9f0", "#b5179e",
 			"#4895ef", "#560bad", "#7209b7", "#b5e48c", "#fca311",
