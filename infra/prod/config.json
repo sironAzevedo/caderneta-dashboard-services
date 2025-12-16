@@ -1,0 +1,51 @@
+{
+  "nameAPP": "dashboard-bff",
+  "port": "8082",
+  "configContainer": {
+    "cpus": "1.0",
+    "memory": "800m",
+    "memorySwap": "1G"
+  },
+  "environment": [
+    {
+      "name": "SPRING_PROFILES_ACTIVE",
+      "value": "prod"
+    },
+    {
+      "name": "SECURITY_ENABLE",
+      "value": "true"
+    },
+    {
+      "name": "VAULT_ENDPOINT",
+      "value": "http://vault:8200"
+    },
+    {
+      "name": "API_FATURAS_URL",
+      "value": "http://fatura-services:8081/v1/fatura-recuperada"
+    },
+    {
+      "name": "VAULT_ROLE_ID",
+      "value": "SECRET::VAULT_ROLE_ID"
+    },
+    {
+      "name": "VAULT_SECRET_ID",
+      "value": "SECRET::VAULT_SECRET_ID"
+    },
+    {
+      "name": "PORT",
+      "value": "8082"
+    },
+    {
+      "name": "REDIS_HOST",
+      "value": "redis-server"
+    },
+    {
+      "name": "REDIS_PORT",
+      "value": "6379"
+    },
+    {
+      "name": "REDIS_PASSWORD",
+      "value": "SECRET::REDIS_PASSWORD"
+    }
+  ]
+}
