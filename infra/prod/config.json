@@ -33,7 +33,7 @@
     },
     {
       "name": "PORT",
-      "value": "8082"
+      "value": "8080"
     },
     {
       "name": "REDIS_HOST",
