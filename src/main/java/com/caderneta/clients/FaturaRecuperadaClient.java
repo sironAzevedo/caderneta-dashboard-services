@@ -2,6 +2,8 @@ package com.caderneta.clients;
 
 import com.caderneta.model.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -53,10 +55,19 @@ public class FaturaRecuperadaClient {
                 });
     }
 
-    public Mono<ProximasFaturasResponse> getFaturasPorMes(String email, int mes, int ano, HeaderInfoDTO headerInfo) {
+    public Mono<ProximasFaturasResponse> getFaturasPorMes(String email, int mes, int ano, HeaderInfoDTO headerInfo, String pagamentoRealizado) {
         log.info("Buscando faturas para usuario: {}, mes: {}, ano: {}", email, mes, ano);
+
+        var uri = "/{email}/mes&ano?mes={mes}&ano={ano}";
+        Object[] params = {email, mes, ano};
+
+        if (StringUtils.isNotBlank(pagamentoRealizado)) {
+            uri = uri.concat("&pagamentoRealizado={pagamentoRealizado}");
+            params = ArrayUtils.add(params, pagamentoRealizado);
+        }
+
         return webClient.get()
-                .uri("/{email}/mes&ano?mes={mes}&ano={ano}", email, mes, ano)
+                .uri(uri, params)
                 .headers(h -> {
                     h.add("transactionid", headerInfo.transactionId());
                     h.add("Authorization", headerInfo.token());

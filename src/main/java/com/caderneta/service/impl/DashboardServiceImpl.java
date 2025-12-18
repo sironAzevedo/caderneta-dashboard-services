@@ -2,22 +2,20 @@ package com.caderneta.service.impl;
 
 import com.br.azevedo.utils.MoedaUtils;
 import com.caderneta.model.*;
+import com.caderneta.model.enums.CategoryIcon;
 import com.caderneta.repository.IFaturaRecuperadaRepository;
 import com.caderneta.service.IDashboardService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import reactor.core.publisher.Mono;
 
-import java.math.BigDecimal;
-import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.IntStream;
 
 import static com.caderneta.util.Utils.BACKGROUND_COLOR;
-import static com.caderneta.util.Utils.REAL;
 
 @Slf4j
 @Service
@@ -26,27 +24,30 @@ public class DashboardServiceImpl implements IDashboardService {
 
 	private final IFaturaRecuperadaRepository faturaRecuperadaRepository;
 
-
 	@Override
 	public DashboardResponse getDashboardSummary(String email, int mes, int ano, HeaderInfoDTO headerInfo) {
 		Mono<List<ExternalGastosCategoriaResponse>> gastosPorCategoria = faturaRecuperadaRepository.getGastosPorCategoria(email, ano, headerInfo);
 		Mono<List<ExternalEvolucaoMensalResponse>> evolucaoMensal = faturaRecuperadaRepository.getEvolucaoMensal(email, ano, headerInfo);
-		Mono<ProximasFaturasResponse> faturasAtuais = faturaRecuperadaRepository.getFaturasPorMes(email, mes, ano, headerInfo);
+		Mono<ProximasFaturasResponse> faturasAtuaisPendentes = faturaRecuperadaRepository.getFaturasPorMes(email, mes, ano, headerInfo, "NAO");
 		Mono<List<Integer>> anosFaturasRecuperadas = faturaRecuperadaRepository.getAnosFaturasRecuperadas(email, headerInfo);
 
-		YearMonth faturasProximoMes = YearMonth.of(ano, mes).plusMonths(1);
-		Mono<ProximasFaturasResponse> faturasProximasFuture = faturaRecuperadaRepository.getFaturasPorMes(email, faturasProximoMes.getMonthValue(), faturasProximoMes.getYear(), headerInfo);
+		return Mono.zip(gastosPorCategoria, evolucaoMensal, faturasAtuaisPendentes, anosFaturasRecuperadas).map(tuple -> {
+			List<GastosCategoriaResponse> gastosCategoria = fetchAndMapGastos(tuple.getT1());
+			List<EvolucaoMensalResponse> evolucaoPorMes = fetchAndMapEvolucao(tuple.getT2());
+			ProximasFaturasResponse fPendentes = tuple.getT3();
 
-		return Mono.zip(gastosPorCategoria, evolucaoMensal, faturasAtuais, faturasProximasFuture, anosFaturasRecuperadas).map(tuple -> {
-			List<GastosCategoriaResponse> gastos = fetchAndMapGastos(tuple.getT1());
-			List<EvolucaoMensalResponse> evolucao = fetchAndMapEvolucao(tuple.getT2());
-			ProximasFaturasResponse fAtuais = tuple.getT3();
-			ProximasFaturasResponse fProximas = tuple.getT4();
-
-			List<FaturasDashboardResponse> faturasMes = fetchAndMapFaturasAtuais(fAtuais);
-			List<StatsResponse> stats = buildStats(evolucao, fAtuais, fProximas);
-			return new DashboardResponse(stats, gastos, evolucao, faturasMes, tuple.getT5());
+			return new DashboardResponse(gastosCategoria, evolucaoPorMes, fetchListFaturasPendente(fPendentes.faturas()), tuple.getT4());
 		}).block();
+	}
+
+	private List<FaturaResponse> fetchListFaturasPendente(List<FaturaResponse> faturas) {
+		if (CollectionUtils.isEmpty(faturas)) {
+			return List.of();
+		}
+		return faturas.stream()
+				.limit(5)
+				.map(f -> f.withIcon(CategoryIcon.getIconForCategory(f.categoria())))
+				.toList();
 	}
 
 	private List<GastosCategoriaResponse> fetchAndMapGastos(List<ExternalGastosCategoriaResponse> gastos) {
@@ -72,9 +73,7 @@ public class DashboardServiceImpl implements IDashboardService {
 				.toList();
 	}
 
-	private List<StatsResponse> buildStats(List<EvolucaoMensalResponse> evolucao, ProximasFaturasResponse faturasAtuais, ProximasFaturasResponse faturasProximas) {
-
-
+	/*private List<StatsResponse> buildStats(List<EvolucaoMensalResponse> evolucao, ProximasFaturasResponse faturasAtuais, ProximasFaturasResponse faturasPendentes) {
 
 		// 1. Total do ano
 		BigDecimal totalAno = evolucao.stream()
@@ -87,17 +86,16 @@ public class DashboardServiceImpl implements IDashboardService {
 		// 3. Previsão
 		String previsao = ObjectUtils.isNotEmpty(faturasAtuais) ? faturasAtuais.previsao() : "0,00";
 
-		// 4. Próximas faturas
-		String valorProximasFaturas = ObjectUtils.isNotEmpty(faturasProximas) ? faturasProximas.valorTotal() : "0,00";
+		// 4. Faturas Pendentes
+		String valorfaturasPendentes = ObjectUtils.isNotEmpty(faturasPendentes) ? faturasPendentes.valorTotal() : "0,00";
 
-		var qtdFaturas = String.valueOf(faturasProximas.faturas().size()).concat(" faturas");
+		var qtdFaturas = String.valueOf(faturasPendentes.faturas().size()).concat(" faturas");
 
 		// Os valores de 'change', 'icon' e 'trend' são exemplos conforme solicitado
 		return List.of(
 				new StatsResponse("Total do ano", REAL.concat(MoedaUtils.bigDecimalToString(totalAno)), "+8%", "TrendingUp", "up"),
-				new StatsResponse("Gastos este mês", REAL.concat(gastosMesAtual), "+12%", "DollarSign", "up"),
 				new StatsResponse("Previsão", REAL.concat(previsao), "-5%", "BarChart3", "down"),
-				new StatsResponse("Próximas faturas", REAL.concat(valorProximasFaturas), qtdFaturas, "Calendar", "neutral")
+				new StatsResponse("Gastos este mês", REAL.concat(gastosMesAtual), "+12%", "DollarSign", "up")
 		);
-	}
+	}*/
 }

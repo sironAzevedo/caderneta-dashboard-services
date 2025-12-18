@@ -9,4 +9,13 @@ public record FaturasPorAnoResponse(
         String previsao,
         Integer quantidade,
         List<FaturaResponse> faturas
-) {}
+) {
+    public FaturasPorAnoResponse withFaturas(List<FaturaResponse> faturas) {
+        return new FaturasPorAnoResponse(
+                this.mes,
+                this.valorTotal,
+                this.previsao,
+                this.quantidade,
+                faturas);
+    }
+}

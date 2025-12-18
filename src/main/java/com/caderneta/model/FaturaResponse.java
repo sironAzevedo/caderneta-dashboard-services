@@ -10,5 +10,20 @@ public record FaturaResponse(
         String pagamentoRealizado,
         String linkDoc,
         String linkDocUpload,
-        String categoria
-) {}
+        String categoria,
+        String icon
+) {
+    public FaturaResponse withIcon(String icon) {
+        return new FaturaResponse(
+                this.codigo,
+                this.nome,
+                this.valor,
+                this.dataRecuperacao,
+                this.pagamentoRealizado,
+                this.linkDoc,
+                this.linkDocUpload,
+                this.categoria,
+                icon
+        );
+    }
+}
