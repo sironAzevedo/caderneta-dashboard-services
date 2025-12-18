@@ -28,8 +28,8 @@ public class FaturaRecuperadaRepositoryImpl implements IFaturaRecuperadaReposito
     }
 
     @Override
-    public Mono<ProximasFaturasResponse> getFaturasPorMes(String email, int mes, int ano, HeaderInfoDTO headerInfo) {
-        return faturaRecuperadaClient.getFaturasPorMes(email, mes, ano, headerInfo);
+    public Mono<ProximasFaturasResponse> getFaturasPorMes(String email, int mes, int ano, HeaderInfoDTO headerInfo, String pagamentoRealizado) {
+        return faturaRecuperadaClient.getFaturasPorMes(email, mes, ano, headerInfo, pagamentoRealizado);
     }
 
     @Override

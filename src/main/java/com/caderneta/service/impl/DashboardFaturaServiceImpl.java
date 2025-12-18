@@ -2,6 +2,7 @@ package com.caderneta.service.impl;
 
 import com.br.azevedo.utils.MoedaUtils;
 import com.caderneta.model.*;
+import com.caderneta.model.enums.CategoryIcon;
 import com.caderneta.model.enums.MesEnum;
 import com.caderneta.repository.IFaturaRecuperadaRepository;
 import com.caderneta.service.IDashboardFaturaService;
@@ -48,10 +49,10 @@ public class DashboardFaturaServiceImpl implements IDashboardFaturaService {
                         .toList();
 
                 List<StatsResponse> stats = buildStats(faturasPorAnoResponses);
-                return new DashboardFaturaResponse(years, meses, stats, faturasPorAnoResponses);
+                return new DashboardFaturaResponse(years, meses, stats, getIconCategory(faturasPorAnoResponses));
             }
             List<StatsResponse> stats = buildStats(faturasList);
-            return new DashboardFaturaResponse(years, meses, stats, faturasList);
+            return new DashboardFaturaResponse(years, meses, stats, getIconCategory(faturasList));
         }).block();
     }
 
@@ -98,5 +99,18 @@ public class DashboardFaturaServiceImpl implements IDashboardFaturaService {
                 new StatsResponse("Valor Total", REAL.concat(MoedaUtils.bigDecimalToString(totalAno)), "+8%", "TrendingUp", "up"),
                 new StatsResponse("Previsão",  REAL.concat(MoedaUtils.bigDecimalToString(totalPrevisao)), "-5%", "BarChart3", "down")
         );
+    }
+
+    private List<FaturasPorAnoResponse> getIconCategory(List<FaturasPorAnoResponse> faturas) {
+        return faturas.stream()
+                .map(f -> {
+                    List<FaturaResponse> updated = f.faturas()
+                            .stream()
+                            .parallel()
+                            .map(fc -> fc.withIcon(CategoryIcon.getIconForCategory(fc.categoria())))
+                            .toList();
+                    return f.withFaturas(updated);
+                })
+                .toList();
     }
 }
