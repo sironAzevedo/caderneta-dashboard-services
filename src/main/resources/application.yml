@@ -17,6 +17,7 @@ integration:
         jitter: 0.5
       circuit-breaker:
         failure-rate-threshold: 60
+        slow-call-rate-threshold: 60
         slow-call-duration-threshold: 2000
         permitted-calls-in-half-open-state: 5
     
