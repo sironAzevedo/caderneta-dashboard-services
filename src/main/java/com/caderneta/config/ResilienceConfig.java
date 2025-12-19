@@ -19,22 +19,40 @@ public class ResilienceConfig {
     @Bean
     public Customizer<ReactiveResilience4JCircuitBreakerFactory> circuitBreakerCustomizer() {
         return factory -> externalApiConfig.getApi()
-                .forEach((product, config) -> factory.configure(builder -> builder
-                        .circuitBreakerConfig(CircuitBreakerConfig.custom()
-                                .failureRateThreshold(config.getCircuitBreaker().getFailureRateThreshold())
-                                .slowCallRateThreshold(50)
-                                .waitDurationInOpenState(Duration.ofMillis(5000))
-                                .slowCallDurationThreshold(Duration.ofMillis(
-                                        config.getCircuitBreaker().getSlowCallDurationThreshold()))
-                                .minimumNumberOfCalls(10)
-                                .slidingWindowType(CircuitBreakerConfig.SlidingWindowType.TIME_BASED)
-                                .slidingWindowSize(10)
-                                .permittedNumberOfCallsInHalfOpenState(
-                                        config.getCircuitBreaker().getPermittedCallsInHalfOpenState())
-                                .build())
-                        .timeLimiterConfig(TimeLimiterConfig.custom()
-                                .timeoutDuration(Duration.ofMillis(config.getRequestTimeout()))
-                                .build()),
-                product));
+                .forEach((product, config) -> factory.configure(builder -> {
+                    CircuitBreakerConfig circuitBreakerConfig = getCircuitBreakerConfig(config);
+                    TimeLimiterConfig timeLimiterConfig = getTimeLimiterConfig(config);
+
+                    builder
+                            .circuitBreakerConfig(circuitBreakerConfig)
+                            .timeLimiterConfig(timeLimiterConfig);
+
+                }, product));
+    }
+
+    private static CircuitBreakerConfig getCircuitBreakerConfig(ExternalApiConfig.ProductConfig config) {
+        return CircuitBreakerConfig.custom()
+                .failureRateThreshold(
+                        config.getCircuitBreaker().getFailureRateThreshold())
+                .slowCallRateThreshold(50)
+                .waitDurationInOpenState(Duration.ofMillis(5000))
+                .slowCallDurationThreshold(
+                        Duration.ofMillis(
+                                config.getCircuitBreaker().getSlowCallDurationThreshold()))
+                .minimumNumberOfCalls(10)
+                .slidingWindowType(
+                        CircuitBreakerConfig.SlidingWindowType.TIME_BASED)
+                .slidingWindowSize(10)
+                .permittedNumberOfCallsInHalfOpenState(
+                        config.getCircuitBreaker()
+                                .getPermittedCallsInHalfOpenState())
+                .build();
+    }
+
+    private static TimeLimiterConfig getTimeLimiterConfig(ExternalApiConfig.ProductConfig config) {
+        return TimeLimiterConfig.custom()
+                .timeoutDuration(
+                        Duration.ofMillis(config.getRequestTimeout()))
+                .build();
     }
 }

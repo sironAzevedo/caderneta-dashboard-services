@@ -24,6 +24,14 @@
       "value": "http://fatura-services:8080/v1/fatura-recuperada"
     },
     {
+      "name": "API_FATURAS_RETRY",
+      "value": "3"
+    },
+    {
+      "name": "API_FATURAS_RETRY_DURATION",
+      "value": "500"
+    },
+    {
       "name": "VAULT_ROLE_ID",
       "value": "SECRET::VAULT_ROLE_ID"
     },
