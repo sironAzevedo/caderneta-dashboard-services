@@ -30,6 +30,7 @@ public class ExternalApiConfig {
         public static class CircuitBreakerConfig {
             private int failureRateThreshold;
             private int slowCallDurationThreshold;
+            private int slowCallRateThreshold;
             private int permittedCallsInHalfOpenState;
         }
 
@@ -38,7 +39,7 @@ public class ExternalApiConfig {
         public static class retryConfig {
             private int maxAttempts;
             private long backoffMs;
-            private int jitter;
+            private Double jitter;
         }
     }
 }
