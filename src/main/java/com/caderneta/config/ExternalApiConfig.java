@@ -22,6 +22,7 @@ public class ExternalApiConfig {
         private String baseUrl;
         private int requestTimeout;
         private int connectionTimeout;
+        private retryConfig retry;
         private CircuitBreakerConfig circuitBreaker;
 
         @Getter
@@ -30,6 +31,14 @@ public class ExternalApiConfig {
             private int failureRateThreshold;
             private int slowCallDurationThreshold;
             private int permittedCallsInHalfOpenState;
+        }
+
+        @Getter
+        @Setter
+        public static class retryConfig {
+            private int maxAttempts;
+            private long backoffMs;
+            private int jitter;
         }
     }
 }
