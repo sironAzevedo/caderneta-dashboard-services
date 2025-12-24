@@ -21,6 +21,10 @@
     },
     {
       "name": "API_FATURAS_URL",
+      "value": "http://fatura-services:8080/v1/fatura"
+    },
+    {
+      "name": "API_FATURAS_RECUPERADAS_URL",
       "value": "http://fatura-services:8080/v1/fatura-recuperada"
     },
     {

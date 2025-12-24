@@ -1,6 +1,12 @@
 package com.caderneta.util;
 
+import com.caderneta.model.CategoryIconDTO;
+import com.caderneta.model.enums.CategoryIcon;
+
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public final class Utils {
 
@@ -36,4 +42,15 @@ public final class Utils {
 			"#f4a261", // laranja areia
 			"#264653"  // azul profundo
 	);
+
+	public static final List<CategoryIconDTO> GESTAO_CATEGORIA =
+			Arrays.stream(CategoryIcon.values())
+					.map(c -> new CategoryIconDTO(
+							c.getCategoryName(),
+							c.getIconName(),
+							c.getColor(),
+							c.getBg(),
+							c.getBorderHover()
+					))
+					.toList();
 }

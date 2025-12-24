@@ -7,8 +7,21 @@ spring:
 
 integration:
   api:
+    fatura:
+      base-url: ${API_FATURAS_URL:http://localhost:8081/v1/fatura}
+      requestTimeout: 5000    # ms
+      connectionTimeout: 5000    # ms
+      retry:
+        max-attempts: ${API_FATURAS_RETRY:3}
+        backoff-ms: ${API_FATURAS_RETRY_DURATION:500}
+        jitter: 0.5
+      circuit-breaker:
+        failure-rate-threshold: 60
+        slow-call-rate-threshold: 60
+        slow-call-duration-threshold: 2000
+        permitted-calls-in-half-open-state: 5
     fatura-recuperada:
-      base-url: ${API_FATURAS_URL:http://localhost:8081/v1/fatura-recuperada}
+      base-url: ${API_FATURAS_RECUPERADAS_URL:http://localhost:8081/v1/fatura-recuperada}
       requestTimeout: 5000    # ms
       connectionTimeout: 5000    # ms
       retry:

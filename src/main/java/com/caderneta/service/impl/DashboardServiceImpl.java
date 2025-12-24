@@ -4,6 +4,7 @@ import com.br.azevedo.utils.MoedaUtils;
 import com.caderneta.model.*;
 import com.caderneta.model.enums.CategoryIcon;
 import com.caderneta.repository.IFaturaRecuperadaRepository;
+import com.caderneta.repository.IFaturaRepository;
 import com.caderneta.service.IDashboardService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,27 +17,44 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import static com.caderneta.util.Utils.BACKGROUND_COLOR;
+import static com.caderneta.util.Utils.GESTAO_CATEGORIA;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class DashboardServiceImpl implements IDashboardService {
 
+	private final IFaturaRepository faturaRepository;
 	private final IFaturaRecuperadaRepository faturaRecuperadaRepository;
 
 	@Override
 	public DashboardResponse getDashboardSummary(String email, int mes, int ano, HeaderInfoDTO headerInfo) {
 		Mono<List<ExternalGastosCategoriaResponse>> gastosPorCategoria = faturaRecuperadaRepository.getGastosPorCategoria(email, ano, headerInfo);
 		Mono<List<ExternalEvolucaoMensalResponse>> evolucaoMensal = faturaRecuperadaRepository.getEvolucaoMensal(email, ano, headerInfo);
-		Mono<ProximasFaturasResponse> faturasAtuaisPendentes = faturaRecuperadaRepository.getFaturasPorMes(email, mes, ano, headerInfo, "NAO");
+		Mono<ProximasFaturasResponse> faturasAtuaisPendentes = faturaRecuperadaRepository.getFaturasPorMes(email, mes, ano, headerInfo, null);
 		Mono<List<Integer>> anosFaturasRecuperadas = faturaRecuperadaRepository.getAnosFaturasRecuperadas(email, headerInfo);
+		Mono<List<CategoriaResponse>> categoriasFaturas = faturaRepository.getGastosPorCategoria(email, headerInfo);
+		Mono<List<FaturaListUserResponse>> faturaByuser = faturaRepository.getFatura(email, headerInfo);
 
-		return Mono.zip(gastosPorCategoria, evolucaoMensal, faturasAtuaisPendentes, anosFaturasRecuperadas).map(tuple -> {
+		return Mono.zip(gastosPorCategoria, evolucaoMensal, faturasAtuaisPendentes, anosFaturasRecuperadas, categoriasFaturas, faturaByuser).map(tuple -> {
 			List<GastosCategoriaResponse> gastosCategoria = fetchAndMapGastos(tuple.getT1());
 			List<EvolucaoMensalResponse> evolucaoPorMes = fetchAndMapEvolucao(tuple.getT2());
 			ProximasFaturasResponse fPendentes = tuple.getT3();
+			List<CategoriaResponse> categoriaResponses = tuple.getT5();
+			List<FaturaListUserResponse> listUserFatura = tuple.getT6();
 
-			return new DashboardResponse(gastosCategoria, evolucaoPorMes, fetchListFaturasPendente(fPendentes.faturas()), tuple.getT4());
+			SetupBeginResponse setup = fetchSetup(categoriaResponses, listUserFatura);
+
+			List<FaturaResponse> faturas = fPendentes.faturas();
+			boolean hasData = !CollectionUtils.isEmpty(faturas);
+			return new DashboardResponse(
+					setup,
+					hasData,
+					!hasData? "Comece agora a sua organizar sua vida financeira" : "",
+					gastosCategoria,
+					evolucaoPorMes,
+					fetchListFaturasPendente(faturas),
+					tuple.getT4());
 		}).block();
 	}
 
@@ -46,6 +64,7 @@ public class DashboardServiceImpl implements IDashboardService {
 		}
 		return faturas.stream()
 				.limit(5)
+				.filter(f -> "N".equals(f.pagamentoRealizado()))
 				.map(f -> f.withIcon(CategoryIcon.getIconForCategory(f.categoria())))
 				.toList();
 	}
@@ -73,29 +92,14 @@ public class DashboardServiceImpl implements IDashboardService {
 				.toList();
 	}
 
-	/*private List<StatsResponse> buildStats(List<EvolucaoMensalResponse> evolucao, ProximasFaturasResponse faturasAtuais, ProximasFaturasResponse faturasPendentes) {
+	private SetupBeginResponse fetchSetup(
+			List<CategoriaResponse> categoriaResponses,
+			List<FaturaListUserResponse> listUserFatura) {
 
-		// 1. Total do ano
-		BigDecimal totalAno = evolucao.stream()
-				.map(EvolucaoMensalResponse::value)
-				.reduce(BigDecimal.ZERO, BigDecimal::add);
-
-		// 2. Gastos este mês
-		String gastosMesAtual = ObjectUtils.isNotEmpty(faturasAtuais) ? faturasAtuais.valorTotal() : "0,00";
-
-		// 3. Previsão
-		String previsao = ObjectUtils.isNotEmpty(faturasAtuais) ? faturasAtuais.previsao() : "0,00";
-
-		// 4. Faturas Pendentes
-		String valorfaturasPendentes = ObjectUtils.isNotEmpty(faturasPendentes) ? faturasPendentes.valorTotal() : "0,00";
-
-		var qtdFaturas = String.valueOf(faturasPendentes.faturas().size()).concat(" faturas");
-
-		// Os valores de 'change', 'icon' e 'trend' são exemplos conforme solicitado
-		return List.of(
-				new StatsResponse("Total do ano", REAL.concat(MoedaUtils.bigDecimalToString(totalAno)), "+8%", "TrendingUp", "up"),
-				new StatsResponse("Previsão", REAL.concat(previsao), "-5%", "BarChart3", "down"),
-				new StatsResponse("Gastos este mês", REAL.concat(gastosMesAtual), "+12%", "DollarSign", "up")
+		return new SetupBeginResponse(
+				CollectionUtils.isEmpty(categoriaResponses),
+				GESTAO_CATEGORIA.stream().limit(10).toList(),
+				CollectionUtils.isEmpty(listUserFatura)
 		);
-	}*/
+	}
 }
