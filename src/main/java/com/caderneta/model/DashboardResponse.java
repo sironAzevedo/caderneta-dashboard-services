@@ -6,8 +6,8 @@ public record DashboardResponse(
         SetupBeginResponse setupBegin,
         Boolean hasData,
         String messageNotData,
+        List<StatsResponse> statsResponses,
         List<GastosCategoriaResponse> gastosPorCategoria,
         List<EvolucaoMensalResponse> evolucaoMensal,
-        List<FaturaResponse> faturasMes,
-        List<Integer> years
+        List<FaturaResponse> faturasMes
 ) {}

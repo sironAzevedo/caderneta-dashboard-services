@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.Exceptions;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 import reactor.util.retry.RetryBackoffSpec;
@@ -18,6 +19,7 @@ import reactor.util.retry.RetryBackoffSpec;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -129,6 +131,45 @@ public class FaturaRecuperadaClient {
                     log.error("Erro ao buscar faturas por ano. usuario={}, ano={}. Error: {}", email, ano, e.getMessage());
                     return Mono.just(List.of()); // Fallback
                 });
+    }
+
+    public Mono<List<ResumoPorCategoriaDTO>> getResumoPorCategoria(String email, int ano, HeaderInfoDTO headerInfo) {
+        log.info("Buscando resumo por categoria para usuario: {}, ano: {}", email, ano);
+        return  webClient.get()
+                .uri("/{email}/summary/{ano}", email, ano)
+                .headers(h -> {
+                    h.add("transactionid", headerInfo.transactionId());
+                    h.add("Authorization", headerInfo.token());
+                })
+                .retrieve()
+                .bodyToFlux(ResumoPorCategoriaDTO.class)
+                .retryWhen(getFilterRetry(retry))
+                .collectList()
+                .onErrorResume(e -> {
+                    log.error("Erro ao buscar resumo por categoria. email={}, ano={}. Error: {}", email, ano, e.getMessage());
+                    return Mono.just(List.of()); // Fallback
+                });
+    }
+
+    public Flux<FaturaCategoriaDetalheDTO> getReport(String email, String categoria, int ano, HeaderInfoDTO headerInfo) {
+        log.info("Buscando detalhe por categoria. email={}, ano={}", email, ano);
+
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/{email}/detalhe/{ano}")
+                        .queryParamIfPresent("categoria", Optional.ofNullable(categoria))
+                        .build(email, ano))
+                .headers(h -> {
+                    h.add("transactionid", headerInfo.transactionId());
+                    h.add("Authorization", headerInfo.token());
+                })
+                .retrieve()
+                .bodyToFlux(FaturaCategoriaDetalheDTO.class)
+                .retryWhen(getFilterRetry(retry))
+                .doOnError(e ->
+                        log.error("Erro ao buscar detalhe por categoria. email={}, ano={}",
+                                email, ano, e))
+                .onErrorResume(e -> Flux.empty());
     }
 
     private static RetryBackoffSpec getFilterRetry(ExternalApiConfig.ProductConfig.retryConfig retry) {

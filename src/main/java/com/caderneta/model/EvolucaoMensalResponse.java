@@ -7,5 +7,6 @@ import java.math.BigDecimal;
 // DTO para a resposta do serviço externo e final
 public record EvolucaoMensalResponse(
         String month,
-        BigDecimal value
+        BigDecimal value,
+        BigDecimal salary
 ) {}
