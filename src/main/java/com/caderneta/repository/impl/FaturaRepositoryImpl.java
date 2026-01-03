@@ -19,7 +19,7 @@ public class FaturaRepositoryImpl implements IFaturaRepository {
     private final FaturaClient client;
 
     @Override
-    public Mono<List<CategoriaResponse>> getGastosPorCategoria(String email, HeaderInfoDTO headerInfo) {
+    public Mono<List<CategoriaResponse>> getCategoria(String email, HeaderInfoDTO headerInfo) {
         return client.getCategoria(email, headerInfo);
     }
 

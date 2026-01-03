@@ -11,7 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.math.BigDecimal;
 import java.util.Collections;
@@ -32,28 +34,33 @@ public class DashboardFaturaServiceImpl implements IDashboardFaturaService {
 
     @Override
     public DashboardFaturaResponse getDashboardSummary(String email, Integer mes, Integer ano, HeaderInfoDTO headerInfo) {
-        Mono<List<Integer>> anosFaturasRecuperadas = faturaRecuperadaRepository.getAnosFaturasRecuperadas(email, headerInfo);
-        Mono<List<FaturasPorAnoResponse>> gastosPorAno = faturaRecuperadaRepository.getFaturasPorAno(email, ano, headerInfo);
+        return faturaRecuperadaRepository
+                .getFaturasPorAno(email, ano, headerInfo)
+                .map(faturasList -> {
 
+                    List<MesDTO> meses = extrairMeses(faturasList);
+                    List<FaturasPorAnoResponse> filtradas =
+                            filtrarPorMesSeNecessario(faturasList, mes);
 
-        return Mono.zip(anosFaturasRecuperadas, gastosPorAno).map(tuple -> {
-            List<Integer> years = tuple.getT1();
-            List<FaturasPorAnoResponse> faturasList = tuple.getT2();
+                    List<StatsResponse> stats = buildStats(filtradas);
 
-            List<MesDTO> meses = extrairMeses(faturasList);
+                    return new DashboardFaturaResponse(
+                            meses,
+                            stats,
+                            getIconCategory(filtradas)
+                    );
+                })
+                .block();
+    }
 
-            if (ObjectUtils.isNotEmpty(mes) && TODOS.getCodigo() != mes) {
-                String nomeMes = MesEnum.nomePorCodigo(mes);
-                List<FaturasPorAnoResponse> faturasPorAnoResponses = faturasList.stream()
-                        .filter(m -> m.mes().equalsIgnoreCase(nomeMes))
-                        .toList();
-
-                List<StatsResponse> stats = buildStats(faturasPorAnoResponses);
-                return new DashboardFaturaResponse(years, meses, stats, getIconCategory(faturasPorAnoResponses));
-            }
-            List<StatsResponse> stats = buildStats(faturasList);
-            return new DashboardFaturaResponse(years, meses, stats, getIconCategory(faturasList));
-        }).block();
+    @Override
+    public Flux<FaturaCategoriaDetalheDTO> getReports(String email, String categoria, Integer ano, HeaderInfoDTO headerInfo) {
+        return faturaRecuperadaRepository
+                .getReport(email, categoria, ano, headerInfo)
+                .parallel()
+                .runOn(Schedulers.parallel())
+                .map(this::enrichWithIcon)
+                .sequential();
     }
 
     public static List<MesDTO> extrairMeses(List<FaturasPorAnoResponse> faturas) {
@@ -112,5 +119,27 @@ public class DashboardFaturaServiceImpl implements IDashboardFaturaService {
                     return f.withFaturas(updated);
                 })
                 .toList();
+    }
+
+    private List<FaturasPorAnoResponse> filtrarPorMesSeNecessario(List<FaturasPorAnoResponse> faturas, Integer mes) {
+        if (ObjectUtils.isEmpty(mes) || TODOS.getCodigo() == mes) {
+            return faturas;
+        }
+
+        String nomeMes = MesEnum.nomePorCodigo(mes);
+
+        return faturas.stream()
+                .filter(f -> f.mes().equalsIgnoreCase(nomeMes))
+                .toList();
+    }
+
+    private FaturaCategoriaDetalheDTO enrichWithIcon(FaturaCategoriaDetalheDTO dto) {
+        return FaturaCategoriaDetalheDTO.builder()
+                .categoria(dto.getCategoria())
+                .icon(CategoryIcon.getIconForCategory(dto.getCategoria()))
+                .valorTotal(dto.getValorTotal())
+                .percentualSalario(dto.getPercentualSalario())
+                .faturas(dto.getFaturas())
+                .build();
     }
 }

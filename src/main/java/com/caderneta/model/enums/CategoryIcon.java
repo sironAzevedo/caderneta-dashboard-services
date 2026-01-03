@@ -120,7 +120,21 @@ public enum CategoryIcon {
             "text-gray-600 dark:text-gray-400",
             "bg-gray-100 dark:bg-gray-900/30",
             "hover:border-gray-300 dark:hover:border-gray-700"
-    );
+    ),
+
+    // =====================
+    // Cartão de Crédito
+    // =====================
+    CARTAO_CREDITO(
+            "Cartão de Credito", "CreditCard",
+            "text-indigo-600 dark:text-indigo-400",
+            "bg-indigo-100 dark:bg-indigo-900/30",
+            "hover:border-indigo-300 dark:hover:border-indigo-700"
+    ),
+    FATURA_CARTAO("Fatura do Cartão", "Receipt", CARTAO_CREDITO),
+    PARCELAMENTO("Parcelamento", "Layers", CARTAO_CREDITO),
+    JUROS_CARTAO("Juros do Cartão", "Percent", CARTAO_CREDITO),
+    ANUIDADE("Anuidade", "BadgeDollarSign", CARTAO_CREDITO);
 
     private final String categoryName;
     private final String iconName;

@@ -31,7 +31,7 @@ public class DashboardController {
     @Operation(
             summary = "Resumo do Dashboard",
             description = "Retorna o resumo financeiro do usuário para o ano e mês informados.",
-            tags = {"Dashboard"}
+            tags = {"Summary"}
     )
     public ResponseEntity<DashboardResponse> getDashboardSummary(
             @PathVariable String email,

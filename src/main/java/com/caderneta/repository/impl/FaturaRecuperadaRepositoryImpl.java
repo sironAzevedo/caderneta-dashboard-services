@@ -41,4 +41,14 @@ public class FaturaRecuperadaRepositoryImpl implements IFaturaRecuperadaReposito
     public Mono<List<Integer>> getAnosFaturasRecuperadas(String email, HeaderInfoDTO headerInfo) {
         return faturaRecuperadaClient.getAnosFaturasRecuperadas(email, headerInfo);
     }
+
+    @Override
+    public Mono<List<ResumoPorCategoriaDTO>> getResumoPorCategoria(String email, int ano, HeaderInfoDTO headerInfo) {
+        return faturaRecuperadaClient.getResumoPorCategoria(email, ano, headerInfo);
+    }
+
+    @Override
+    public Flux<FaturaCategoriaDetalheDTO> getReport(String email, String categoria, int ano, HeaderInfoDTO headerInfo) {
+        return faturaRecuperadaClient.getReport(email, categoria, ano, headerInfo);
+    }
 }
