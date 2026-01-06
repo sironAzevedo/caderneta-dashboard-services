@@ -15,6 +15,7 @@ import java.util.List;
 public class FaturaCategoriaDetalheDTO {
     private String categoria;
     private String icon;
+    private String color;
     private BigDecimal valorTotal;
     private BigDecimal percentualSalario;
     private List<FaturaDetalheDTO> faturas;

@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.caderneta.model.enums.MesEnum.TODOS;
+import static com.caderneta.util.Utils.BACKGROUND_COLOR;
 import static com.caderneta.util.Utils.REAL;
 
 @Slf4j
@@ -59,7 +60,7 @@ public class DashboardFaturaServiceImpl implements IDashboardFaturaService {
                 .getReport(email, categoria, ano, headerInfo)
                 .parallel()
                 .runOn(Schedulers.parallel())
-                .map(this::enrichWithIcon)
+                .map(this::enrichWithIconAndColor)
                 .sequential();
     }
 
@@ -133,10 +134,15 @@ public class DashboardFaturaServiceImpl implements IDashboardFaturaService {
                 .toList();
     }
 
-    private FaturaCategoriaDetalheDTO enrichWithIcon(FaturaCategoriaDetalheDTO dto) {
+    private FaturaCategoriaDetalheDTO enrichWithIconAndColor(FaturaCategoriaDetalheDTO dto) {
+
+        int index = Math.abs(dto.getCategoria().hashCode()) % BACKGROUND_COLOR.size();
+        String color = BACKGROUND_COLOR.get(index);
+
         return FaturaCategoriaDetalheDTO.builder()
                 .categoria(dto.getCategoria())
                 .icon(CategoryIcon.getIconForCategory(dto.getCategoria()))
+                .color(color)
                 .valorTotal(dto.getValorTotal())
                 .percentualSalario(dto.getPercentualSalario())
                 .faturas(dto.getFaturas())
