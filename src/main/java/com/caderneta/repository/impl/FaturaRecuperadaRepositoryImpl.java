@@ -48,7 +48,7 @@ public class FaturaRecuperadaRepositoryImpl implements IFaturaRecuperadaReposito
     }
 
     @Override
-    public Flux<FaturaCategoriaDetalheDTO> getReport(String email, String categoria, int ano, HeaderInfoDTO headerInfo) {
-        return faturaRecuperadaClient.getReport(email, categoria, ano, headerInfo);
+    public Flux<FaturaCategoriaDetalheDTO> getReport(String email, String categoria, int ano, Integer mes, HeaderInfoDTO headerInfo) {
+        return faturaRecuperadaClient.getReport(email, categoria, ano, mes, headerInfo);
     }
 }

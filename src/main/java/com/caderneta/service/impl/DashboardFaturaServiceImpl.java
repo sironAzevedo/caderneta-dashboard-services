@@ -9,13 +9,16 @@ import com.caderneta.service.IDashboardFaturaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.NumberUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.math.BigDecimal;
+import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -55,9 +58,12 @@ public class DashboardFaturaServiceImpl implements IDashboardFaturaService {
     }
 
     @Override
-    public Flux<FaturaCategoriaDetalheDTO> getReports(String email, String categoria, Integer ano, HeaderInfoDTO headerInfo) {
+    public Flux<FaturaCategoriaDetalheDTO> getReports(String email, String categoria, Integer ano, String mes, HeaderInfoDTO headerInfo) {
+        Integer m = ObjectUtils.isEmpty(mes) ? null :
+                StringUtils.isNumeric(mes) ? MesEnum.fromCodigo(Integer.parseInt(mes)).getCodigo() :
+                        MesEnum.fromDescricao(mes).getCodigo();
         return faturaRecuperadaRepository
-                .getReport(email, categoria, ano, headerInfo)
+                .getReport(email, categoria, ano, m, headerInfo)
                 .parallel()
                 .runOn(Schedulers.parallel())
                 .map(this::enrichWithIconAndColor)
