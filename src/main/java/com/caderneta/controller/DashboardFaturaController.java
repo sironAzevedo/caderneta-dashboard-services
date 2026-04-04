@@ -54,12 +54,13 @@ public class DashboardFaturaController {
     public ResponseEntity<Flux<FaturaCategoriaDetalheDTO>> getReportsPorCategoria(
             @PathVariable("email") String email,
             @PathVariable("ano") Integer ano,
+            @RequestParam(value = "mes", required = false) String mes,
             @RequestParam(value = "categoria", required = false) String categoria,
             @RequestHeader(name = "transactionid") String transactionId,
             @RequestHeader(name = HttpHeaders.AUTHORIZATION) String token
     ) {
         HeaderInfoDTO headerInfo = new HeaderInfoDTO(transactionId, token);
-        Flux<FaturaCategoriaDetalheDTO> response = service.getReports(email, categoria , ano, headerInfo);
+        Flux<FaturaCategoriaDetalheDTO> response = service.getReports(email, categoria , ano, mes, headerInfo);
         return ResponseEntity.ok(response);
     }
 }

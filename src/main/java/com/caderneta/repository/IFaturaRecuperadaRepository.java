@@ -19,5 +19,5 @@ public interface IFaturaRecuperadaRepository {
 
     Mono<List<ResumoPorCategoriaDTO>> getResumoPorCategoria(String email, int ano, HeaderInfoDTO headerInfo);
 
-    Flux<FaturaCategoriaDetalheDTO> getReport(String email, String categoria, int ano, HeaderInfoDTO headerInfo);
+    Flux<FaturaCategoriaDetalheDTO> getReport(String email, String categoria, int ano, Integer mes, HeaderInfoDTO headerInfo);
 }

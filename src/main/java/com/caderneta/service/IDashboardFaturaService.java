@@ -11,5 +11,5 @@ import java.util.List;
 public interface IDashboardFaturaService {
     DashboardFaturaResponse getDashboardSummary(String email, Integer mes, Integer ano, HeaderInfoDTO headerInfo);
 
-    Flux<FaturaCategoriaDetalheDTO> getReports(String email, String categoria, Integer ano, HeaderInfoDTO headerInfo);
+    Flux<FaturaCategoriaDetalheDTO> getReports(String email, String categoria, Integer ano, String mes, HeaderInfoDTO headerInfo);
 }

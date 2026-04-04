@@ -151,13 +151,14 @@ public class FaturaRecuperadaClient {
                 });
     }
 
-    public Flux<FaturaCategoriaDetalheDTO> getReport(String email, String categoria, int ano, HeaderInfoDTO headerInfo) {
+    public Flux<FaturaCategoriaDetalheDTO> getReport(String email, String categoria, int ano, Integer mes, HeaderInfoDTO headerInfo) {
         log.info("Buscando detalhe por categoria. email={}, ano={}", email, ano);
 
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/{email}/detalhe/{ano}")
                         .queryParamIfPresent("categoria", Optional.ofNullable(categoria))
+                        .queryParamIfPresent("mes", Optional.ofNullable(mes))
                         .build(email, ano))
                 .headers(h -> {
                     h.add("transactionid", headerInfo.transactionId());
