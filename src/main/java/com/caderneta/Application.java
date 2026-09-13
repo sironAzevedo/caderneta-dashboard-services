@@ -2,6 +2,7 @@ package com.caderneta;
 
 import com.br.azevedo.infra.cache.EnableCache;
 import com.br.azevedo.security.EnableCors;
+import com.br.azevedo.security.EnableSecurity;
 import com.br.azevedo.utils.mensagemUtils.EnableI18N;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -14,6 +15,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableCache
 @EnableI18N
 @EnableScheduling
+@EnableSecurity
 @ComponentScan(basePackages = {"com.caderneta", "com.br.azevedo"})
 @SpringBootApplication(exclude = {
 		DataSourceAutoConfiguration.class,

@@ -1,22 +1,19 @@
 package com.caderneta.controller;
 
 import com.br.azevedo.infra.log.method.MethodLoggable;
-import com.br.azevedo.security.user.ValidationUser;
 import com.caderneta.model.DashboardResponse;
 import com.caderneta.model.HeaderInfoDTO;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import com.caderneta.model.DashboardDTO;
 import com.caderneta.service.IDashboardService;
-
 import io.swagger.v3.oas.annotations.Operation;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
@@ -25,7 +22,6 @@ public class DashboardController {
 
     private final IDashboardService dashboardService;
 
-    @ValidationUser
     @MethodLoggable
     @GetMapping("/{email}/summary")
     @Operation(

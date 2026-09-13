@@ -1,7 +1,13 @@
 package com.caderneta.clients;
 
 import com.caderneta.config.ExternalApiConfig;
-import com.caderneta.model.*;
+import com.caderneta.model.ExternalEvolucaoMensalResponse;
+import com.caderneta.model.ExternalGastosCategoriaResponse;
+import com.caderneta.model.FaturaCategoriaDetalheDTO;
+import com.caderneta.model.FaturasPorAnoResponse;
+import com.caderneta.model.HeaderInfoDTO;
+import com.caderneta.model.ProximasFaturasResponse;
+import com.caderneta.model.ResumoPorCategoriaDTO;
 import io.netty.handler.timeout.ReadTimeoutException;
 import io.netty.handler.timeout.TimeoutException;
 import lombok.extern.slf4j.Slf4j;

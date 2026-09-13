@@ -13,7 +13,7 @@
 
 	<groupId>com.caderneta</groupId>
 	<artifactId>caderneta-dashboard-services</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.14</version>
 	<name>caderneta-dashboard-services</name>
 	<description>Microservico Caderneta Dashboard</description>
 
@@ -97,7 +97,7 @@
 		<dependency>
 			<groupId>com.br.azevedo</groupId>
 			<artifactId>commons-security</artifactId>
-			<version>1.0.21042026122418</version>
+			<version>1.0.12092026223255</version>
 			<exclusions>
 				<exclusion>
 					<groupId>com.br.azevedo</groupId>
