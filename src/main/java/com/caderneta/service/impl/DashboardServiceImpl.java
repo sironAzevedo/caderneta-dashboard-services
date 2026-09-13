@@ -1,7 +1,18 @@
 package com.caderneta.service.impl;
 
 import com.br.azevedo.utils.MoedaUtils;
-import com.caderneta.model.*;
+import com.caderneta.model.CategoriaResponse;
+import com.caderneta.model.DashboardResponse;
+import com.caderneta.model.EvolucaoMensalResponse;
+import com.caderneta.model.ExternalEvolucaoMensalResponse;
+import com.caderneta.model.FaturaListUserResponse;
+import com.caderneta.model.FaturaResponse;
+import com.caderneta.model.GastosCategoriaResponse;
+import com.caderneta.model.HeaderInfoDTO;
+import com.caderneta.model.ProximasFaturasResponse;
+import com.caderneta.model.ResumoPorCategoriaDTO;
+import com.caderneta.model.SetupBeginResponse;
+import com.caderneta.model.StatsResponse;
 import com.caderneta.model.enums.CategoryIcon;
 import com.caderneta.repository.IFaturaRecuperadaRepository;
 import com.caderneta.repository.IFaturaRepository;
@@ -14,11 +25,11 @@ import org.springframework.util.CollectionUtils;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import static com.caderneta.util.Utils.*;
+import static com.caderneta.util.Utils.BACKGROUND_COLOR;
+import static com.caderneta.util.Utils.GESTAO_CATEGORIA;
 import static com.caderneta.util.Utils.REAL;
 
 @Slf4j

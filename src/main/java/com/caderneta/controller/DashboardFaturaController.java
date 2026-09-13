@@ -1,9 +1,7 @@
 package com.caderneta.controller;
 
 import com.br.azevedo.infra.log.method.MethodLoggable;
-import com.br.azevedo.security.user.ValidationUser;
 import com.caderneta.model.DashboardFaturaResponse;
-import com.caderneta.model.DashboardResponse;
 import com.caderneta.model.FaturaCategoriaDetalheDTO;
 import com.caderneta.model.HeaderInfoDTO;
 import com.caderneta.service.IDashboardFaturaService;
@@ -11,10 +9,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -23,7 +24,6 @@ public class DashboardFaturaController {
 
     private final IDashboardFaturaService service;
 
-    @ValidationUser
     @MethodLoggable
     @GetMapping("/{email}/summary")
     @Operation(
@@ -43,7 +43,6 @@ public class DashboardFaturaController {
         return ResponseEntity.ok(response);
     }
 
-    @ValidationUser
     @MethodLoggable
     @GetMapping("/{email}/reports/{ano}")
     @Operation(

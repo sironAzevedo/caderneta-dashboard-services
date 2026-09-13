@@ -1,7 +1,13 @@
 package com.caderneta.service.impl;
 
 import com.br.azevedo.utils.MoedaUtils;
-import com.caderneta.model.*;
+import com.caderneta.model.DashboardFaturaResponse;
+import com.caderneta.model.FaturaCategoriaDetalheDTO;
+import com.caderneta.model.FaturaResponse;
+import com.caderneta.model.FaturasPorAnoResponse;
+import com.caderneta.model.HeaderInfoDTO;
+import com.caderneta.model.MesDTO;
+import com.caderneta.model.StatsResponse;
 import com.caderneta.model.enums.CategoryIcon;
 import com.caderneta.model.enums.MesEnum;
 import com.caderneta.repository.IFaturaRecuperadaRepository;
@@ -12,18 +18,13 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.NumberUtils;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.math.BigDecimal;
-import java.text.NumberFormat;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.caderneta.model.enums.MesEnum.TODOS;
