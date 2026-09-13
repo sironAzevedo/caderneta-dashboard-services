@@ -40,11 +40,11 @@ jobs:
           echo "Extraída versão da aplicação a partir da branch: ${APP_VERSION}"
           mvn versions:set -DnewVersion=$APP_VERSION
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: 17
+          java-version: 21
 
       - name: Read config.json for production application name
         id: json_config
