@@ -1,0 +1,53 @@
+name: "🚨 Formulário de Rollback em Produção"
+description: "Solicitar o rollback automatizado de emergência da aplicação fatura-service para uma versão/tag anterior."
+title: "[ROLLBACK] Solicitação de Rollback de Produção"
+labels: ["rollback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # 🚨 Solicitação de Rollback de Produção
+        
+        > [!CAUTION]
+        > **ATENÇÃO:** Esta ação acionará imediatamente a esteira de implantação em produção na VPS, substituindo a versão atual pela tag selecionada.
+
+        <details>
+        <summary><b>ℹ️ Como funciona o processo de rollback automatizado?</b></summary>
+        <br>
+        
+        1. A pipeline lê a versão/tag informada neste formulário.
+        2. Um comentário de confirmação de início é publicado nesta Issue.
+        3. O contêiner Docker atual é interrompido e a imagem da versão antiga é inicializada.
+        4. O teste de saúde (*Health Check*) valida a aplicação no endpoint <code>/actuator/health</code>.
+        5. Esta Issue é encerrada automaticamente após a confirmação do sucesso da operação.
+        </details>
+        
+        ---
+
+  - type: input
+    id: target_tag
+    attributes:
+      label: "🏷️ Tag / Versão de Destino para Rollback"
+      description: "Informe a tag/versão estável desejada para implantação em produção (ex: `1.0.76` ou `v1.0.76`)."
+      placeholder: "1.0.76"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reason
+    attributes:
+      label: "📝 Motivo e Detalhes do Incidente"
+      description: "Descreva o motivo que justifica o rollback (erros nos logs, exceções 5xx, indisponibilidade, etc.)."
+      placeholder: "Identificados erros nos logs após o deploy da versão X: Exceção de conexão com o banco..."
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: "✅ Confirmação de Segurança"
+      options:
+        - label: "Confirmo que a tag informada é uma versão prévia estável da aplicação."
+          required: true
+        - label: "Estou ciente de que o contêiner atual em produção será substituído."
+          required: true

@@ -1,4 +1,4 @@
-name: fatura-service
+name: Deploy
 
 on:
   workflow_call:
@@ -9,6 +9,10 @@ on:
       github_environment:
         required: false
         type: string
+      override_version:
+        required: false
+        type: string
+        default: ''
     secrets:
       docker-user:
         required: true
@@ -29,27 +33,22 @@ on:
 
 permissions:
   id-token: write
-  contents: read
+  contents: write
 
 jobs:
-  build_and_publish:
-    name: Build, Package and Publish
+  deploy:
+    name: Deploy da aplicação
     runs-on: ubuntu-latest
-    outputs:
-      APP_VERSION: ${{ steps.versioning.outputs.APP_VERSION }}
-      JSON_B64: ${{ steps.replace_secrets.outputs.JSON_B64 }}
-      APP_NAME: ${{ steps.json_config.outputs.APP_NAME }}
-      APP_PORT: ${{ steps.json_config.outputs.APP_PORT }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set up JDK 21
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: 21
+          java-version: 17
 
       - name: Read config.json for the selected environment
         id: json_config
@@ -68,6 +67,67 @@ jobs:
           
           echo "Application name: $APP_NAME"
           echo "Application port: $APP_PORT"
+
+      - name: Extract Release Version for Deploy
+        id: versioning
+        env:
+          DOCKER_USER: ${{ secrets.docker-user }}
+          DOCKER_PASS: ${{ secrets.docker-pass }}
+          DOCKER_REPO: ${{ secrets.docker-repo }}
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq curl
+          
+          OVERRIDE_VER="${{ inputs.override_version }}"
+          
+          # 1. Obter a versão do pom.xml
+          POM_VER=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout 2>/dev/null || python3 -c "import xml.etree.ElementTree as ET; tree = ET.parse('pom.xml'); root = tree.getroot(); ns = {'m': 'http://maven.apache.org/POM/4.0.0'}; print(root.find('m:version', ns).text if root.find('m:version', ns) is not None else '')")
+          echo "Versão no pom.xml: $POM_VER"
+          
+          # 2. Obter do histórico do git
+          GIT_VER=$(git log -n 5 --oneline 2>/dev/null | grep -oE 'release/1\.0\.[0-9]+|1\.0\.[0-9]+' | head -n1 | sed 's|release/||' || true)
+          echo "Versão no histórico do Git: $GIT_VER"
+          
+          # 3. Buscar a última tag 1.0.X no Docker Hub
+          APP_NAME="${{ steps.json_config.outputs.APP_NAME }}"
+          LOGIN_RES=$(curl -s -H "Content-Type: application/json" -X POST -d "{\"username\": \"${DOCKER_USER}\", \"password\": \"${DOCKER_PASS}\"}" https://hub.docker.com/v2/users/login/)
+          TOKEN=$(echo "$LOGIN_RES" | jq -r '.token // empty')
+          
+          HIGHEST_DOCKER_TAG=""
+          HIGHEST_PATCH=0
+          
+          if [ -n "$TOKEN" ]; then
+            TAGS_JSON=$(curl -s -H "Authorization: JWT ${TOKEN}" "https://hub.docker.com/v2/repositories/${DOCKER_REPO}/${APP_NAME}/tags?page_size=100")
+            TAGS=$(echo "$TAGS_JSON" | jq -r '.results[]?.name // empty')
+          
+            for tag in $TAGS; do
+              if [[ "$tag" =~ ^1\.0\.([0-9]+)$ ]]; then
+                PATCH_NUM="${BASH_REMATCH[1]}"
+                if (( PATCH_NUM > HIGHEST_PATCH )); then
+                  HIGHEST_PATCH=$PATCH_NUM
+                  HIGHEST_DOCKER_TAG="1.0.${PATCH_NUM}"
+                fi
+              fi
+            done
+          fi
+          echo "Última tag publicada no Docker Hub: $HIGHEST_DOCKER_TAG"
+          
+          # Seleção final da versão
+          if [ -n "$OVERRIDE_VER" ]; then
+            APP_VERSION="${OVERRIDE_VER#v}"
+            echo "Aviso: Utilizando versão sob demanda/rollback: $APP_VERSION"
+          elif [[ "$POM_VER" =~ ^1\.0\.[0-9]+$ ]]; then
+            APP_VERSION="$POM_VER"
+          elif [[ "$GIT_VER" =~ ^1\.0\.[0-9]+$ ]]; then
+            APP_VERSION="$GIT_VER"
+          elif [ -n "$HIGHEST_DOCKER_TAG" ]; then
+            APP_VERSION="$HIGHEST_DOCKER_TAG"
+          else
+            echo "❌ Não foi possível determinar uma versão válida de release!"
+            exit 1
+          fi
+          
+          echo "APP_VERSION=${APP_VERSION}" >> $GITHUB_OUTPUT
+          echo "✅ Versão final selecionada para deploy em produção: $APP_VERSION"
 
       - name: Replace Secrets in JSON Config
         id: replace_secrets
@@ -96,67 +156,7 @@ jobs:
           JSON_B64=$(echo "$RESOLVED_JSON" | base64 -w0 2>/dev/null || echo "$RESOLVED_JSON" | base64)
           echo "JSON_B64=$JSON_B64" >> $GITHUB_OUTPUT
 
-      - name: Set and Update Application Version
-        id: versioning
-        run: |
-          NEW_VERSION="1.0.${{ github.run_number }}"
-          echo "Nova versão da aplicação: $NEW_VERSION"
-          mvn versions:set -DnewVersion=$NEW_VERSION
-          echo "APP_VERSION=${NEW_VERSION}" >> $GITHUB_OUTPUT
-
-      - name: Configure Maven settings
-        run: |
-          mkdir -p ~/.m2
-          echo "<settings><servers><server><id>github</id><username>\${env.GITHUB_ACTOR}</username><password>\${env.GITHUB_TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
-        env:
-          GITHUB_ACTOR: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.github-token }}
-
-      - name: Cache Maven dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-
-      - name: Package with Maven
-        run: mvn clean package -DskipTests
-        env:
-          GITHUB_TOKEN: ${{ secrets.github-token }}
-
-      - name: Verify JAR file
-        run: |
-          echo "JAR file created:"
-          ls -la target/*.jar
-          echo "File size: $(du -h target/*.jar | cut -f1)"
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.docker-user }}
-          password: ${{ secrets.docker-pass }}
-
-      - name: Build and push multi-arch image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ${{ secrets.docker-repo }}/${{ steps.json_config.outputs.APP_NAME }}:${{ steps.versioning.outputs.APP_VERSION }}
-            ${{ secrets.docker-repo }}/${{ steps.json_config.outputs.APP_NAME }}:latest
-
-  deploy:
-    name: Deploy da aplicação
-    runs-on: ubuntu-latest
-    needs: [ build_and_publish ]
-    steps:
-      - name: Execute deploy
+      - name: Execute deploy on VPS
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.vps-host }}
@@ -165,10 +165,10 @@ jobs:
           script: |
             set -euo pipefail
             
-            APP_VERSION="${{ needs.build_and_publish.outputs.APP_VERSION }}"
-            JSON_B64='${{ needs.build_and_publish.outputs.JSON_B64 }}'
-            APP_NAME="${{ needs.build_and_publish.outputs.APP_NAME }}"
-            APP_PORT="${{ needs.build_and_publish.outputs.APP_PORT }}"
+            APP_VERSION="${{ steps.versioning.outputs.APP_VERSION }}"
+            JSON_B64='${{ steps.replace_secrets.outputs.JSON_B64 }}'
+            APP_NAME="${{ steps.json_config.outputs.APP_NAME }}"
+            APP_PORT="${{ steps.json_config.outputs.APP_PORT }}"
             REPO_DOCKER="${{ secrets.docker-repo }}"
             IMAGE_NAME="$REPO_DOCKER/$APP_NAME:$APP_VERSION"
             
@@ -201,7 +201,7 @@ jobs:
             
             echo "Conteúdo do arquivo .env:"
             awk -F= '{print $1 "=***"}' "$ENV_FILE"
-                        
+            
             echo "🚀 Parar e remover contêiner antigo (se existir)"
             if [ "$(docker ps -q -f name=^/${APP_NAME}$)" ]; then
                 docker stop "$APP_NAME"
@@ -241,4 +241,21 @@ jobs:
             done
             
             echo "❌ Aplicação não subiu, rollback necessário"
+            cd ../exports/
+            bash docker_update_fatura_services.sh $APP_VERSION
             exit 1
+
+      - name: Create and Push Release Tag in GitHub
+        if: success()
+        run: |
+          APP_VERSION="${{ steps.versioning.outputs.APP_VERSION }}"
+          TAG_NAME="v${APP_VERSION#v}"
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          echo "Criando e enviando a tag $TAG_NAME para o repositório..."
+          git tag -f "$TAG_NAME" -m "Release $APP_VERSION implantada com sucesso em produção"
+          git push origin "$TAG_NAME" --force
+        env:
+          GITHUB_TOKEN: ${{ secrets.github-token }}
