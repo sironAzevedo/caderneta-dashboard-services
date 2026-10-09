@@ -117,16 +117,54 @@ public class DashboardFaturaServiceImpl implements IDashboardFaturaService {
     }
 
     private List<FaturasPorAnoResponse> getIconCategory(List<FaturasPorAnoResponse> faturas) {
+        if (CollectionUtils.isEmpty(faturas)) {
+            return List.of();
+        }
         return faturas.stream()
                 .map(f -> {
-                    List<FaturaResponse> updated = f.faturas()
-                            .stream()
-                            .parallel()
-                            .map(fc -> fc.withIcon(CategoryIcon.getIconForCategory(fc.categoria())))
-                            .toList();
-                    return f.withFaturas(updated);
+                    List<FaturaResponse> updated = CollectionUtils.isEmpty(f.faturas()) ? List.of() :
+                            f.faturas()
+                                    .stream()
+                                    .parallel()
+                                    .map(fc -> fc.withIcon(CategoryIcon.getIconForCategory(fc.categoria())))
+                                    .toList();
+
+                    String valorPendente = calcularValorPendente(f.valorTotal(), updated);
+
+                    return f.withFaturasEValorPendente(updated, valorPendente);
                 })
                 .toList();
+    }
+
+    private String calcularValorPendente(String valorTotalStr, List<FaturaResponse> faturas) {
+        if (CollectionUtils.isEmpty(faturas)) {
+            return null;
+        }
+
+        BigDecimal valorTotal = parseValor(valorTotalStr);
+
+        BigDecimal somaNaoPagas = faturas.stream()
+                .filter(fc -> fc != null && !"S".equalsIgnoreCase(fc.pagamentoRealizado()))
+                .map(fc -> parseValor(fc.valor()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (somaNaoPagas.compareTo(valorTotal) == 0) {
+            return null;
+        }
+
+        return MoedaUtils.bigDecimalToString(somaNaoPagas);
+    }
+
+    private BigDecimal parseValor(String valorStr) {
+        if (StringUtils.isBlank(valorStr)) {
+            return BigDecimal.ZERO;
+        }
+        try {
+            return MoedaUtils.stringToBigDecimal(valorStr);
+        } catch (Exception e) {
+            log.warn("Erro ao converter valor '{}' para BigDecimal: {}", valorStr, e.getMessage());
+            return BigDecimal.ZERO;
+        }
     }
 
     private List<FaturasPorAnoResponse> filtrarPorMesSeNecessario(List<FaturasPorAnoResponse> faturas, Integer mes) {
