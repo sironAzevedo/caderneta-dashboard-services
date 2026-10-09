@@ -65,6 +65,7 @@ public class DashboardServiceImpl implements IDashboardService {
 
 			List<StatsResponse> statsResponses = buildStats(evolucao);
 
+			List<FaturaResponse> faturasMes = fetchListFaturasPendente(faturas);
 			return new DashboardResponse(
 					setup,
 					hasData,
@@ -72,7 +73,7 @@ public class DashboardServiceImpl implements IDashboardService {
 					statsResponses,
 					gastosCategoria.stream().limit(5).toList(),
 					evolucaoPorMes,
-					fetchListFaturasPendente(faturas));
+					faturasMes);
 		}).block();
 	}
 
@@ -81,9 +82,9 @@ public class DashboardServiceImpl implements IDashboardService {
 			return List.of();
 		}
 		return faturas.stream()
-				.limit(5)
 				.filter(f -> "N".equals(f.pagamentoRealizado()))
 				.map(f -> f.withIcon(CategoryIcon.getIconForCategory(f.categoria())))
+				.limit(5)
 				.toList();
 	}
 

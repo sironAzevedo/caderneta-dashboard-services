@@ -13,7 +13,7 @@
 
 	<groupId>com.caderneta</groupId>
 	<artifactId>caderneta-dashboard-services</artifactId>
-	<version>1.0.14</version>
+	<version>1.0.16</version>
 	<name>caderneta-dashboard-services</name>
 	<description>Microservico Caderneta Dashboard</description>
 
