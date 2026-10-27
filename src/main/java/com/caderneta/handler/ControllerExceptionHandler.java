@@ -1,8 +1,8 @@
 package com.caderneta.handler;
 
-import java.util.Date;
-
-
+import com.br.azevedo.exception.AuthenticationException;
+import com.br.azevedo.exception.AuthorizationException;
+import com.br.azevedo.exception.BusinessException;
 import com.br.azevedo.exception.EmptyResultDataAccessException;
 import com.br.azevedo.exception.InternalErrorException;
 import com.br.azevedo.exception.NotFoundException;
@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import java.util.Date;
+
 @ControllerAdvice
 public class ControllerExceptionHandler extends ResponseEntityExceptionHandler {
 
@@ -32,10 +34,31 @@ public class ControllerExceptionHandler extends ResponseEntityExceptionHandler {
 	}
 
 	@ResponseBody
+	@ResponseStatus(value = HttpStatus.BAD_REQUEST)
+	@ExceptionHandler(value = { BusinessException.class })
+	public StandardError businessException(RuntimeException e, HttpServletRequest request) {
+		return StandardError.builder(HttpStatus.BAD_REQUEST.value(), e.getMessage(), new Date());
+	}
+
+	@ResponseBody
 	@ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
 	@ExceptionHandler(value = { InternalErrorException.class })
 	public StandardError internalError(RuntimeException e, HttpServletRequest request) {
-		return StandardError.builder(HttpStatus.NOT_FOUND.value(), e.getMessage(), new Date());
+		return StandardError.builder(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage(), new Date());
+	}
+
+	@ResponseBody
+	@ResponseStatus(value = HttpStatus.UNAUTHORIZED)
+	@ExceptionHandler(value = { AuthenticationException.class })
+	public StandardError handleAuthenticationException(AuthenticationException authenticationException) {
+		return StandardError.builder(HttpStatus.UNAUTHORIZED.value(), authenticationException.getMessage(), new Date());
+	}
+
+	@ResponseBody
+	@ResponseStatus(value = HttpStatus.FORBIDDEN)
+	@ExceptionHandler(value = { AuthorizationException.class })
+	public StandardError handleAuthorizationException(AuthorizationException authorizationException) {
+		return StandardError.builder(HttpStatus.FORBIDDEN.value(), authorizationException.getMessage(), new Date());
 	}
 
 	@Override
