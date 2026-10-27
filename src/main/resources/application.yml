@@ -33,14 +33,18 @@ integration:
         slow-call-rate-threshold: 60
         slow-call-duration-threshold: 2000
         permitted-calls-in-half-open-state: 5
-    
+
+cloud:
+  aws:
+    services: ${AWS_SERVICES:ssm}
+    region:
+      static: ${AWS_REGION:us-east-1}
+    credentials:
+      access-key: ${AWS_ACCESS_KEY:}
+      secret-key: ${AWS_SECRET_KEY:}
+
 security:
-  enabled: ${SECURITY_ENABLE:false}
-  secret:
-    vault:
-      endpoint: ${VAULT_ENDPOINT:http://localhost:8200}
-      role-id: ${VAULT_ROLE_ID}
-      secret-id: ${VAULT_SECRET_ID}
+  enabled: ${SECURITY_ENABLE:true}
   scopes: ${APP_SCOPES:invoice}
 
 cache:
@@ -50,7 +54,10 @@ cache:
       port: ${REDIS_PORT:6379}
       database: ${REDIS_DATABASE:0}
       password: ${REDIS_PASSWORD:599E72B4E2ED1023E6EE0842668117E704F5A912B09369F1AD300147E2CA895C}
+    caches:
+      - cacheName: ssm_parameter_by_name
+        expiration: ${CACHE_DURATION_SSM:PT24H}
 
 springdoc:
   swagger-ui:
-    path=: /swagger-ui.html
+    path: /swagger-ui.html

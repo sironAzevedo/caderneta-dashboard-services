@@ -14,9 +14,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableCors
 @EnableCache
 @EnableI18N
-@EnableScheduling
 @EnableSecurity
-@ComponentScan(basePackages = {"com.caderneta", "com.br.azevedo"})
+@EnableScheduling
 @SpringBootApplication(exclude = {
 		DataSourceAutoConfiguration.class,
 		RedisRepositoriesAutoConfiguration.class

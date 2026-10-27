@@ -16,10 +16,6 @@
       "value": "true"
     },
     {
-      "name": "VAULT_ENDPOINT",
-      "value": "http://vault:8200"
-    },
-    {
       "name": "API_FATURAS_URL",
       "value": "http://fatura-services:8080/v1/fatura"
     },
@@ -36,14 +32,6 @@
       "value": "500"
     },
     {
-      "name": "VAULT_ROLE_ID",
-      "value": "SECRET::VAULT_ROLE_ID"
-    },
-    {
-      "name": "VAULT_SECRET_ID",
-      "value": "SECRET::VAULT_SECRET_ID"
-    },
-    {
       "name": "PORT",
       "value": "8080"
     },
@@ -58,6 +46,14 @@
     {
       "name": "REDIS_PASSWORD",
       "value": "SECRET::REDIS_PASSWORD"
+    },
+    {
+      "name": "AWS_ACCESS_KEY",
+      "value": "SECRET::AWS_ACCESS_KEY"
+    },
+    {
+      "name": "AWS_SECRET_KEY",
+      "value": "SECRET::AWS_SECRET_KEY"
     }
   ]
 }
