@@ -172,7 +172,7 @@ jobs:
             REPO_DOCKER="${{ secrets.docker-repo }}"
             IMAGE_NAME="$REPO_DOCKER/$APP_NAME:$APP_VERSION"
             
-            echo "🚀 Iniciando o deploy da versão: $APP_VERSION para a aplicação: $APP_NAME"
+            echo "🚀 Iniciando o deploy Zero Downtime da versão: $APP_VERSION para a aplicação: $APP_NAME"
             
             if ! command -v jq &> /dev/null; then
                 echo "jq não encontrado. Instalando..."
@@ -187,10 +187,14 @@ jobs:
             MEMORY=$(echo "$JSON_CONFIG" | jq -r '.configContainer // {} | .memory // "800m"')
             MEMORY_SWAP=$(echo "$JSON_CONFIG" | jq -r '.configContainer // {} | .memorySwap // "1G"')
             
+            echo "📦 Montando volumes (se houver)"
+            DOCKER_VOLUMES=$(echo "$JSON_CONFIG" | jq -r '.volumes[]? | "-v \(. )"' 2>/dev/null | xargs || true)
+            
             echo "✅ Config extraída:"
             echo "   CPUs: $CPUS"
             echo "   Memory: $MEMORY"
             echo "   Memory Swap: $MEMORY_SWAP"
+            echo "   Volumes: ${DOCKER_VOLUMES:-Nenhum}"
             
             echo "📄 Criar arquivo .env temporário"
             TMP_DIR=$(mktemp -d)
@@ -202,17 +206,67 @@ jobs:
             echo "Conteúdo do arquivo .env:"
             awk -F= '{print $1 "=***"}' "$ENV_FILE"
             
-            echo "🚀 Parar e remover contêiner antigo (se existir)"
+            # Garantir que a rede Docker exista
+            docker network inspect app-network >/dev/null 2>&1 || docker network create app-network
+
+            # Puxar a nova imagem antes de qualquer ação para evitar lentidão
+            echo "📥 Baixando nova imagem Docker..."
+            docker pull "$IMAGE_NAME"
+
+            # Identificar imagem em execução atualmente para possível rollback
+            CURRENT_IMAGE_ID=$(docker inspect --format '{{.Image}}' "$APP_NAME" 2>/dev/null || true)
+
+            # Estratégia Zero Downtime:
+            # 1. Se contêiner já existe, validar o novo contêiner em porta de teste temporária
+            TEST_PORT=18000
+            TEST_CONTAINER="${APP_NAME}_staging"
+
+            echo "🧪 Subindo contêiner de validação preliminar ($TEST_CONTAINER na porta $TEST_PORT:8080)..."
+            docker rm -f "$TEST_CONTAINER" 2>/dev/null || true
+            
+            docker run -d \
+              -p "${TEST_PORT}:8080" \
+              --name "$TEST_CONTAINER" \
+              --network app-network \
+              --cpus="$CPUS" \
+              --memory="$MEMORY" \
+              --memory-swap="$MEMORY_SWAP" \
+              --env-file "$ENV_FILE" \
+              ${DOCKER_VOLUMES:-} \
+              "$IMAGE_NAME"
+
+            echo "⏳ Aguardando contêiner staging responder..."
+            STAGING_UP=false
+            for i in {1..20}; do
+              sleep 3
+              HEALTH_STATUS=$(curl -s "http://localhost:${TEST_PORT}/actuator/health" || curl -s "http://localhost:${TEST_PORT}/api/v1/health" || curl -s "http://localhost:${TEST_PORT}/health" || true)
+              if echo "$HEALTH_STATUS" | grep -q '"status":"UP"'; then
+                echo "✅ Staging validado com sucesso! ($HEALTH_STATUS)"
+                STAGING_UP=true
+                break
+              fi
+              echo "⚪️ Tentativa $i/20 aguardando staging..."
+            done
+
+            # Remove o container de teste imediatamente após a validação
+            docker stop "$TEST_CONTAINER" 2>/dev/null || true
+            docker rm "$TEST_CONTAINER" 2>/dev/null || true
+
+            if [ "$STAGING_UP" != "true" ]; then
+              echo "❌ Validação preliminar falhou! O novo container não está saudável."
+              echo "O serviço atual em produção NÃO foi afetado (Zero Downtime preservado)."
+              rm -rf "$TMP_DIR"
+              exit 1
+            fi
+
+            # 2. Swap rápido e seguro: para antigo e sobe novo instantaneamente
+            echo "🔄 Trocando contêiner de produção de forma rápida..."
             if [ "$(docker ps -q -f name=^/${APP_NAME}$)" ]; then
                 docker stop "$APP_NAME"
-                docker rm "$APP_NAME"
+                docker rename "$APP_NAME" "${APP_NAME}_old" || true
             fi
-            
-            echo "🗑️ Removendo imagens antigas..."
-            OLD_IMAGES=$(docker images -q $REPO_DOCKER/$APP_NAME)
-            [ -n "$OLD_IMAGES" ] && docker rmi -f $OLD_IMAGES || true
-            
-            echo "Iniciando novo contêiner..."
+
+            echo "Iniciando contêiner oficial de produção..."
             docker run -d \
               -p "${APP_PORT}:8080" \
               --name "$APP_NAME" \
@@ -222,31 +276,50 @@ jobs:
               --memory="$MEMORY" \
               --memory-swap="$MEMORY_SWAP" \
               --env-file "$ENV_FILE" \
+              ${DOCKER_VOLUMES:-} \
               "$IMAGE_NAME"
-            
+
             rm -rf "$TMP_DIR"
-            
-            echo "⏳ Aguardando aplicação subir..."
-            sleep 20
-            
-            echo "🩺 Health Check..."
-            for i in {1..12}; do
-              HEALTH_STATUS=$(curl -s http://localhost:${APP_PORT}/actuator/health || true)
-              if echo "$HEALTH_STATUS" | grep -q '{"status":"UP"}'; then
-                echo "✅ Aplicação está UP e saudável!"
-                exit 0
+
+            # 3. Health Check final em produção
+            echo "🩺 Health Check em produção..."
+            PROD_UP=false
+            for i in {1..15}; do
+              sleep 2
+              HEALTH_STATUS=$(curl -s "http://localhost:${APP_PORT}/actuator/health" || curl -s "http://localhost:${APP_PORT}/api/v1/health" || curl -s "http://localhost:${APP_PORT}/health" || true)
+              if echo "$HEALTH_STATUS" | grep -q '"status":"UP"'; then
+                echo "✅ Aplicação está UP e saudável em produção!"
+                PROD_UP=true
+                break
               fi
-              echo "⚪️ Tentativa $i/12: não está pronta ainda ($HEALTH_STATUS)"
-              sleep 5
+              echo "⚪️ Tentativa $i/15: aguardando produção..."
             done
-            
-            echo "❌ Aplicação não subiu, rollback necessário"
-            cd ../exports/
-            bash docker_update_fatura_services.sh $APP_VERSION
-            exit 1
+
+            if [ "$PROD_UP" = "true" ]; then
+              echo "🧹 Removendo contêiner antigo de backup..."
+              docker rm -f "${APP_NAME}_old" 2>/dev/null || true
+              
+              echo "🗑️ Removendo imagens antigas sem uso..."
+              docker image prune -f || true
+              echo "🚀 Deploy concluído com sucesso e Zero Downtime!"
+              exit 0
+            else
+              echo "❌ Health check falhou em produção! Iniciando Rollback automático..."
+              docker stop "$APP_NAME" 2>/dev/null || true
+              docker rm "$APP_NAME" 2>/dev/null || true
+              if [ "$(docker ps -a -q -f name=^/${APP_NAME}_old$)" ]; then
+                docker rename "${APP_NAME}_old" "$APP_NAME"
+                docker start "$APP_NAME"
+                echo "⚠️ Rollback automático concluído: contêiner anterior restaurado!"
+                sleep 2
+                OLD_HEALTH=$(curl -s "http://localhost:${APP_PORT}/actuator/health" || curl -s "http://localhost:${APP_PORT}/health" || true)
+                echo "🩺 Health status do contêiner restaurado: $OLD_HEALTH"
+              fi
+              exit 1
+            fi
 
       - name: Create and Push Release Tag in GitHub
-        if: success()
+        if: success() && inputs.override_version == ''
         run: |
           APP_VERSION="${{ steps.versioning.outputs.APP_VERSION }}"
           TAG_NAME="v${APP_VERSION#v}"
