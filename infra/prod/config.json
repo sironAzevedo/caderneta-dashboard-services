@@ -54,6 +54,26 @@
     {
       "name": "AWS_SECRET_KEY",
       "value": "SECRET::AWS_SECRET_KEY"
+    },
+    {
+      "name": "JAVA_TOOL_OPTIONS",
+      "value": "-javaagent:/app/elastic-apm-agent.jar"
+    },
+    {
+      "name": "ELASTIC_APM_SERVICE_NAME",
+      "value": "dashboard-bff"
+    },
+    {
+      "name": "ELASTIC_APM_SERVER_URL",
+      "value": "http://apm-server:8200"
+    },
+    {
+      "name": "ELASTIC_APM_ENVIRONMENT",
+      "value": "prod"
+    },
+    {
+      "name": "ELASTIC_APM_APPLICATION_PACKAGES",
+      "value": "com.caderneta"
     }
   ]
 }
