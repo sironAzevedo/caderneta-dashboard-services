@@ -96,6 +96,12 @@
 		</dependency>
 
 		<dependency>
+			<groupId>net.logstash.logback</groupId>
+			<artifactId>logstash-logback-encoder</artifactId>
+			<version>7.4</version>
+		</dependency>
+
+		<dependency>
 			<groupId>com.br.azevedo</groupId>
 			<artifactId>commons-security</artifactId>
 			<version>1.0.25102026072710</version>

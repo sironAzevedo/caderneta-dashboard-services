@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml" />
+
+    <!-- 1. Perfil Local / Desenvolvimento: Texto legível clássico -->
+    <springProfile name="!prod">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>[%d{ISO8601}] %-5p [%t] %-36c{1} %X{transaction.id}: %m %n</pattern>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+        </root>
+    </springProfile>
+
+    <!-- 2. Perfil de Produção: JSON Estruturado para Filebeat -> Logstash -> Elasticsearch -->
+    <springProfile name="prod">
+        <springProperty scope="context" name="SPRING_APP_NAME" source="spring.application.name" defaultValue="caderneta-dashboard-services" />
+
+        <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <customFields>{"service":"${SPRING_APP_NAME}"}</customFields>
+                <includeMdcKeyName>transaction.id</includeMdcKeyName>
+                <includeMdcKeyName>transactionid</includeMdcKeyName>
+                <fieldNames>
+                    <timestamp>@timestamp</timestamp>
+                    <levelValue>[ignore]</levelValue>
+                </fieldNames>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="JSON_CONSOLE" />
+        </root>
+    </springProfile>
+</configuration>
