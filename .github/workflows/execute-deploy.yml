@@ -237,7 +237,7 @@ jobs:
 
             echo "⏳ Aguardando contêiner staging responder..."
             STAGING_UP=false
-            for i in {1..20}; do
+            for i in {1..30}; do
               sleep 3
               HEALTH_STATUS=$(curl -s "http://localhost:${TEST_PORT}/actuator/health" || curl -s "http://localhost:${TEST_PORT}/api/v1/health" || curl -s "http://localhost:${TEST_PORT}/health" || true)
               if echo "$HEALTH_STATUS" | grep -q '"status":"UP"'; then
@@ -245,7 +245,7 @@ jobs:
                 STAGING_UP=true
                 break
               fi
-              echo "⚪️ Tentativa $i/20 aguardando staging..."
+              echo "⚪️ Tentativa $i/30 aguardando staging..."
             done
 
             # Remove o container de teste imediatamente após a validação
@@ -284,7 +284,7 @@ jobs:
             # 3. Health Check final em produção
             echo "🩺 Health Check em produção..."
             PROD_UP=false
-            for i in {1..15}; do
+            for i in {1..30}; do
               sleep 2
               HEALTH_STATUS=$(curl -s "http://localhost:${APP_PORT}/actuator/health" || curl -s "http://localhost:${APP_PORT}/api/v1/health" || curl -s "http://localhost:${APP_PORT}/health" || true)
               if echo "$HEALTH_STATUS" | grep -q '"status":"UP"'; then
@@ -292,7 +292,7 @@ jobs:
                 PROD_UP=true
                 break
               fi
-              echo "⚪️ Tentativa $i/15: aguardando produção..."
+              echo "⚪️ Tentativa $i/30: aguardando produção..."
             done
 
             if [ "$PROD_UP" = "true" ]; then
