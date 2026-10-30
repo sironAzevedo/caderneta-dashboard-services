@@ -22,11 +22,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check if feature code has been merged into release branch
+      - name: Check if develop code has been merged into release branch
         run: |
           git fetch origin main
           if git diff --quiet origin/main HEAD; then
-            echo "⚠️ A branch de release é idêntica à main (o PR da feature ainda não foi mesclado)."
+            echo "⚠️ A branch de release é idêntica à main (o PR da develop ainda não foi mesclado)."
             echo "Saindo sem executar o build."
             exit 0
           fi
