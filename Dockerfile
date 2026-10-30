@@ -6,5 +6,8 @@ WORKDIR /app
 ARG JAR_FILE=target/*.jar
 COPY ${JAR_FILE} app.jar
 
+# Elastic APM Agent
+ADD https://repo1.maven.org/maven2/co/elastic/apm/elastic-apm-agent/1.50.0/elastic-apm-agent-1.50.0.jar /app/elastic-apm-agent.jar
+RUN chmod 644 /app/elastic-apm-agent.jar
 
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
